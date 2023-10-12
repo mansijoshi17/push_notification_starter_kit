@@ -16,10 +16,11 @@ import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
 import Button from "@mui/material/Button";
-import ethers from "ethers";
+import { ethers } from "ethers";
 import Popover from "@mui/material/Popover";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import NotificationList from "./NotificationsList";
+import * as PushAPI from "@pushprotocol/restapi";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -69,6 +70,7 @@ export default function PrimarySearchAppBar() {
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
 
   const [address, setAddress] = React.useState("");
+  const [countNoti, setCount] = React.useState(0);
 
   const connectWallet = async () => {
     const { ethereum } = window;
@@ -80,8 +82,22 @@ export default function PrimarySearchAppBar() {
       const accounts = await ethereum.request({
         method: "eth_requestAccounts",
       });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
       // await issueCredId(issuerName, accounts[0]);
       setAddress(accounts[0]);
+      await PushAPI.channels.subscribe({
+        signer: signer,
+        channelAddress: "eip155:5:0x73AF87F754c235a69E5DFB1C3450767292a7e974", // channel address in CAIP
+        userAddress: `eip155:5:${accounts[0]}`, // user address in CAIP
+        onSuccess: () => {
+          console.log("opt in success");
+        },
+        onError: () => {
+          console.error("opt in error");
+        },
+        env: "staging",
+      });
     } catch (err) {
       if (err.code === 4902) {
         try {
@@ -210,6 +226,7 @@ export default function PrimarySearchAppBar() {
             &nbsp;
             {address ? (
               <>
+              {console.log(countNoti)}
                 <PopupState variant="popover" popupId="demo-popup-popover">
                   {(popupState) => (
                     <div>
@@ -219,7 +236,7 @@ export default function PrimarySearchAppBar() {
                         color="inherit"
                         {...bindTrigger(popupState)}
                       >
-                        <Badge badgeContent={17} color="error">
+                        <Badge badgeContent={countNoti} color="error">
                           <NotificationsIcon />
                         </Badge>
                       </IconButton>
@@ -244,7 +261,10 @@ export default function PrimarySearchAppBar() {
                         }}
                       >
                         <Typography sx={{ p: 2 }}>
-                          <NotificationList />
+                          <NotificationList
+                            address={address}
+                            setCount={(num) => setCount(num)}
+                          />
                         </Typography>
                       </Popover>
                     </div>

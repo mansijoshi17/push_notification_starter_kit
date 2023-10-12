@@ -4,8 +4,11 @@ import PrimarySearchAppBar from "./components/AppBar";
 import SendNotification from "./components/SendNotifications";
 import process from "process";
 import dotenv from "dotenv";
+import { useWeb3React } from "@web3-react/core";
 
 function App() {
+
+
   useEffect(() => {
     dotenv.config();
   }, []);

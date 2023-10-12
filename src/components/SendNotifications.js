@@ -9,19 +9,49 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import * as PushAPI from "@pushprotocol/restapi";
+import * as ethers from "ethers";
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
+const PK = process.env.REACT_APP_PUSH_PRIVATE_KEY; // channel private key
+const Pkey = `0x${PK}`;
+const _signer = new ethers.Wallet(Pkey);
+
 const defaultTheme = createTheme();
+// REACT_APP_PUSH_PRIVATE_KEY
 
 export default function SendNotification() {
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     console.log({
       title: data.get("title"),
       message: data.get("message"),
     });
+    try {
+      const apiResponse = await PushAPI.payloads.sendNotification({
+        signer: _signer,
+        type: 3, // broadcast
+        identityType: 2, // direct payload
+        notification: {
+          title: `CodeCrunch Techschool`,
+          body: `Tutorial`,
+        },
+        payload: {
+          title: `${data.get("title")}`,
+          body: `${data.get("message")}`,
+          cta: "",
+          img: "",
+        },
+        recipients: `eip155:5:${data.get("recipient")}`,
+        channel: "eip155:5:0x73AF87F754c235a69E5DFB1C3450767292a7e974", // your channel address
+        env: "staging",
+      });
+      console.log(apiResponse);
+    } catch (err) {
+      console.error("Error: ", err);
+    }
   };
 
   return (
